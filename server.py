@@ -1,20 +1,22 @@
-from fastmcp import FastMCP
-from stravalib.client import Client
+import sys
 import os
 import time
 from dotenv import load_dotenv
+from fastmcp import FastMCP
+from stravalib.client import Client
 
 # Load environment variables
 load_dotenv()
 
 # Configuration
+# CLIENT_ID can be int or str in stravalib, but usually int.
 CLIENT_ID = os.getenv("STRAVA_CLIENT_ID")
 CLIENT_SECRET = os.getenv("STRAVA_CLIENT_SECRET")
 REFRESH_TOKEN = os.getenv("STRAVA_REFRESH_TOKEN")
 
 if not all([CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN]):
-    print(
-        "Warning: STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, or STRAVA_REFRESH_TOKEN not set in environment."
+    sys.stderr.write(
+        "Warning: STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, or STRAVA_REFRESH_TOKEN not set in environment.\n"
     )
 
 # Initialize FastMCP
@@ -34,18 +36,24 @@ def get_client() -> Client:
     # Buffer time to refresh before actual expiration (e.g., 5 minutes)
     if time.time() > _token_expires_at - 300:
         try:
-            print("Refreshing Strava access token...")
+            sys.stderr.write("Refreshing Strava access token...\n")
+            # Ensure CLIENT_ID is correctly typed if needed, though stravalib handles str often
             response = _client.refresh_access_token(
-                client_id=CLIENT_ID,
-                client_secret=CLIENT_SECRET,
-                refresh_token=REFRESH_TOKEN,
+                client_id=int(CLIENT_ID)
+                if CLIENT_ID and CLIENT_ID.isdigit()
+                else CLIENT_ID,  # type: ignore
+                client_secret=CLIENT_SECRET,  # type: ignore
+                refresh_token=REFRESH_TOKEN,  # type: ignore
             )
             _client.access_token = response["access_token"]
             _client.refresh_token = response["refresh_token"]
             _token_expires_at = response["expires_at"]
-            print("Token refreshed successfully.")
+            sys.stderr.write("Token refreshed successfully.\n")
         except Exception as e:
-            raise RuntimeError(f"Failed to authenticate with Strava: {str(e)}")
+            # Log full error to stderr for debugging
+            sys.stderr.write(f"Auth Error: {e}\n")
+            # Return generic error to client to avoid leaking secrets
+            raise RuntimeError("Failed to authenticate with Strava. Check server logs.")
 
     return _client
 
@@ -57,19 +65,31 @@ def get_athlete_stats() -> str:
     Returns a formatted string with recent and all-time stats.
     """
     client = get_client()
+    return _get_athlete_stats(client)
+
+
+def _get_athlete_stats(client: Client) -> str:
     athlete = client.get_athlete()
     stats = client.get_athlete_stats(athlete.id)
+
+    # Safely access nested objects
+    recent_run = stats.recent_run_totals
+    all_run = stats.all_run_totals
+    recent_ride = stats.recent_ride_totals
+
+    def get_val(obj, attr, default="N/A"):
+        return getattr(obj, attr, default) if obj else default
 
     return f"""
 Athlete: {athlete.firstname} {athlete.lastname}
 Recent Run Totals:
-  Distance: {stats.recent_run_totals.distance}
-  Achievement Count: {stats.recent_run_totals.achievement_count}
+  Distance: {get_val(recent_run, "distance")}
+  Achievement Count: {get_val(recent_run, "achievement_count")}
 All-Time Run Totals:
-  Distance: {stats.all_run_totals.distance}
+  Distance: {get_val(all_run, "distance")}
 Recent Ride Totals:
-  Distance: {stats.recent_ride_totals.distance}
-  Elevation Gain: {stats.recent_ride_totals.elevation_gain}
+  Distance: {get_val(recent_ride, "distance")}
+  Elevation Gain: {get_val(recent_ride, "elevation_gain")}
 """
 
 
@@ -82,19 +102,34 @@ def list_activities(limit: int = 5) -> list[dict]:
         limit: Number of activities to return (default 5)
     """
     client = get_client()
+    return _list_activities(client, limit)
+
+
+def _list_activities(client: Client, limit: int) -> list[dict]:
     activities = client.get_activities(limit=limit)
 
     result = []
     for activity in activities:
+        # Handle moving_time safely
+        moving_time = (
+            getattr(activity.moving_time, "seconds", 0) if activity.moving_time else 0
+        )
+
         result.append(
             {
                 "id": activity.id,
                 "name": activity.name,
-                "type": activity.type,
-                "start_date": activity.start_date.isoformat(),
-                "distance_meters": float(activity.distance),
-                "moving_time_seconds": activity.moving_time.seconds,
-                "total_elevation_gain": float(activity.total_elevation_gain),
+                "type": str(activity.type),
+                "start_date": activity.start_date.isoformat()
+                if activity.start_date
+                else None,
+                "distance_meters": float(activity.distance)
+                if activity.distance
+                else 0.0,
+                "moving_time_seconds": moving_time,
+                "total_elevation_gain": float(activity.total_elevation_gain)
+                if activity.total_elevation_gain
+                else 0.0,
             }
         )
     return result
@@ -109,19 +144,34 @@ def get_activity_details(activity_id: int) -> dict:
         activity_id: The ID of the activity to retrieve
     """
     client = get_client()
+    return _get_activity_details(client, activity_id)
+
+
+def _get_activity_details(client: Client, activity_id: int) -> dict:
     activity = client.get_activity(activity_id)
+
+    moving_time = (
+        getattr(activity.moving_time, "seconds", 0) if activity.moving_time else 0
+    )
+    elapsed_time = (
+        getattr(activity.elapsed_time, "seconds", 0) if activity.elapsed_time else 0
+    )
 
     return {
         "id": activity.id,
         "name": activity.name,
         "description": activity.description,
-        "type": activity.type,
-        "distance": float(activity.distance),
-        "moving_time": activity.moving_time.seconds,
-        "elapsed_time": activity.elapsed_time.seconds,
-        "total_elevation_gain": float(activity.total_elevation_gain),
-        "average_speed": float(activity.average_speed),
-        "max_speed": float(activity.max_speed),
+        "type": str(activity.type),
+        "distance": float(activity.distance) if activity.distance else 0.0,
+        "moving_time": moving_time,
+        "elapsed_time": elapsed_time,
+        "total_elevation_gain": float(activity.total_elevation_gain)
+        if activity.total_elevation_gain
+        else 0.0,
+        "average_speed": float(activity.average_speed)
+        if activity.average_speed
+        else 0.0,
+        "max_speed": float(activity.max_speed) if activity.max_speed else 0.0,
         "calories": activity.calories,
         "device_name": activity.device_name,
     }
