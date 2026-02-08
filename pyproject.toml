@@ -1,0 +1,15 @@
+[project]
+name = "strava-mcp"
+version = "0.1.0"
+description = "A Model Context Protocol (MCP) server for Strava"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp",
+    "stravalib",
+    "python-dotenv",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
