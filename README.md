@@ -5,6 +5,7 @@ A Model Context Protocol (MCP) server that connects to the Strava API, allowing 
 ## Prerequisites
 
 - Python 3.10+
+- [uv](https://docs.astral.sh/uv/) (installed and available in your PATH)
 - [Strava Account](https://www.strava.com/)
 - Strava API Application (to get Client ID and Secret)
 
@@ -68,6 +69,44 @@ python server.py
 -   `list_activities`: List recent activities (default limit: 5).
 -   `get_activity_details`: Get detailed information for a specific activity ID.
 
+## Connect to Claude Desktop
+
+To use this server with Claude Desktop securely (keeping your API keys in `.env` and not in the config file), add the following to your `claude_desktop_config.json`:
+
+**Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+You can use `uv` directly to run the server:
+
+```json
+{
+  "mcpServers": {
+    "strava": {
+      "command": "uv",
+      "args": [
+        "run",
+        "server.py"
+      ],
+      "cwd": "/absolute/path/to/strava-mcp"
+    }
+  }
+}
+```
+
+*Note: Replace `/absolute/path/to/strava-mcp` with the full absolute path to your project directory. If Claude Desktop fails to start the server, you may need to provide the absolute path to the `uv` executable (e.g., `/Users/yourname/.cargo/bin/uv`). Run `which uv` in your terminal to find it.*
+
 ## Development
+
+### Running Tests
+
+To run the test suite:
+
+```bash
+# Install dev dependencies
+uv sync --extra dev
+
+# Run tests
+pytest tests
+```
 
 -   Modify `server.py` to add more tools using the `stravalib` client.
