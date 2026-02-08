@@ -5,8 +5,10 @@ from dotenv import load_dotenv
 from fastmcp import FastMCP
 from stravalib.client import Client
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from the directory containing this script
+# This ensures .env is found even if the script is run from a different CWD
+script_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(script_dir, ".env"))
 
 # Configuration
 # CLIENT_ID can be int or str in stravalib, but usually int.
