@@ -1,7 +1,14 @@
 import pytest
 from unittest.mock import MagicMock
 import datetime
-from server import _get_athlete_stats, _list_activities, _get_activity_details
+from server import (
+    _get_athlete_stats,
+    _list_activities,
+    _get_activity_details,
+    AthleteStats,
+    ActivitySummary,
+    ActivityDetails,
+)
 
 # Mock objects to simulate Strava API responses
 
@@ -50,10 +57,19 @@ def test_get_athlete_stats(mock_client):
     # Run internal function
     result = _get_athlete_stats(mock_client)
 
-    # Verify
-    assert "Test Athlete" in result
-    assert "Distance: 1000.0" in result
-    assert "Achievement Count: 5" in result
+    # Verify - result is now an AthleteStats dataclass
+    assert isinstance(result, AthleteStats)
+    assert result.firstname == "Test"
+    assert result.lastname == "Athlete"
+    assert result.recent_run_totals.distance == 1000.0
+    assert result.recent_run_totals.achievement_count == 5
+
+    # Verify the formatted string output
+    formatted = result.to_formatted_string()
+    assert "Test Athlete" in formatted
+    assert "Distance: 1000.0" in formatted
+    assert "Achievement Count: 5" in formatted
+
     mock_client.get_athlete.assert_called_once()
     mock_client.get_athlete_stats.assert_called_once_with(123)
 
@@ -69,13 +85,20 @@ def test_list_activities(mock_client):
     # Run internal function
     result = _list_activities(mock_client, limit=2)
 
-    # Verify
+    # Verify - result is now a list of ActivitySummary dataclasses
     assert len(result) == 2
-    assert result[0]["id"] == 1
-    assert result[0]["name"] == "Run 1"
-    assert result[0]["type"] == "Run"
-    assert result[1]["type"] == "Ride"
-    assert result[0]["moving_time_seconds"] == 1800
+    assert isinstance(result[0], ActivitySummary)
+    assert result[0].id == 1
+    assert result[0].name == "Run 1"
+    assert result[0].type == "Run"
+    assert result[1].type == "Ride"
+    assert result[0].moving_time == 1800
+
+    # Verify to_dict method works
+    dict_result = result[0].to_dict()
+    assert dict_result["id"] == 1
+    assert dict_result["name"] == "Run 1"
+
     mock_client.get_activities.assert_called_once_with(limit=2)
 
 
@@ -92,9 +115,16 @@ def test_get_activity_details(mock_client):
     # Run internal function
     result = _get_activity_details(mock_client, 999)
 
-    # Verify
-    assert result["id"] == 999
-    assert result["name"] == "Big Race"
-    assert result["distance"] == 5000.0
-    assert result["device_name"] == "Garmin"
+    # Verify - result is now an ActivityDetails dataclass
+    assert isinstance(result, ActivityDetails)
+    assert result.id == 999
+    assert result.name == "Big Race"
+    assert result.distance == 5000.0
+    assert result.device_name == "Garmin"
+
+    # Verify to_dict method works
+    dict_result = result.to_dict()
+    assert dict_result["id"] == 999
+    assert dict_result["name"] == "Big Race"
+
     mock_client.get_activity.assert_called_once_with(999)
