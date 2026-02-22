@@ -3,7 +3,8 @@
 A Model Context Protocol (MCP) server that connects to the Strava API.
 """
 
-from typing import Literal, Optional
+from typing import Literal, Optional, Any
+import json
 from fastmcp import FastMCP
 
 from strava_mcp.auth import get_client
@@ -14,6 +15,7 @@ from strava_mcp.services.activities import (
     get_activity_details,
 )
 from strava_mcp.services.streams import get_activity_laps, get_activity_streams
+from strava_mcp.services.analysis import analyze_data
 
 # Constants
 MAX_LIMIT = 200
@@ -135,6 +137,31 @@ def get_activity_streams_tool(
     client = get_client()
     streams = get_activity_streams(client, activity_id, types, resolution)
     return streams.to_dict()
+
+
+@mcp.tool()
+def analyze_data_tool(code: str, data: Any) -> Any:
+    """
+    Execute Python code to analyze Strava data safely using Monty.
+
+    Args:
+        code: Python code to execute. The data is available as a variable named 'data'.
+              Example: "sum(activity['distance'] for activity in data) / 1000"
+        data: The data to analyze (e.g. list of activities, athlete stats).
+              Can be passed as a JSON object (list/dict) or a JSON string.
+    """
+    # If data is a string, try to parse it as JSON
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except json.JSONDecodeError:
+            pass  # Treat as raw string if not valid JSON
+
+    try:
+        result = analyze_data(code, data)
+        return result
+    except Exception as e:
+        return f"Error executing code: {str(e)}"
 
 
 if __name__ == "__main__":

@@ -72,6 +72,11 @@ uv run server.py
 -   `get_activity_streams`: Get raw stream data (GPS, heart rate, power, cadence, etc.) for an activity.
 -   `search_activities`: Search activities with filters (name query, type, date range, distance range).
 
+### Experimental
+
+-   `analyze_data`: Execute Python code to analyze Strava data safely using [Monty](https://github.com/pydantic/monty).
+    -   **Note:** This tool allows the agent to write and execute Python code in a secure, sandboxed environment to perform complex calculations on your data (e.g., "calculate average pace for runs over 10km").
+
 ## Connect to Claude Desktop
 
 To use this server with Claude Desktop securely (keeping your API keys in `.env` and not in the config file), add the following to your `claude_desktop_config.json`:
