@@ -15,6 +15,9 @@ from strava_mcp.services.activities import (
 )
 from strava_mcp.services.streams import get_activity_laps, get_activity_streams
 
+# Constants
+MAX_LIMIT = 200
+
 # Initialize FastMCP
 mcp = FastMCP("strava-server")
 
@@ -38,6 +41,9 @@ def list_activities_tool(limit: int = 5) -> list[dict]:
     Args:
         limit: Number of activities to return (default 5)
     """
+    if limit > MAX_LIMIT:
+        limit = MAX_LIMIT
+
     client = get_client()
     activities = list_activities(client, limit)
     return [activity.to_dict() for activity in activities]
@@ -66,6 +72,9 @@ def search_activities_tool(
         max_distance: Maximum distance in meters
         limit: Maximum number of activities to fetch from API (default 50)
     """
+    if limit > MAX_LIMIT:
+        limit = MAX_LIMIT
+
     client = get_client()
     activities = search_activities(
         client,
