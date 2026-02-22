@@ -68,6 +68,9 @@ python server.py
 -   `get_athlete_stats`: Get statistics for the authenticated athlete.
 -   `list_activities`: List recent activities (default limit: 5).
 -   `get_activity_details`: Get detailed information for a specific activity ID.
+-   `get_activity_laps`: Get lap breakdowns for an activity (lap splits with metrics like pace, HR, power).
+-   `get_activity_streams`: Get raw stream data (GPS, heart rate, power, cadence, etc.) for an activity.
+-   `search_activities`: Search activities with filters (name query, type, date range, distance range).
 
 ## Connect to Claude Desktop
 
