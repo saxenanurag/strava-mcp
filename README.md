@@ -57,10 +57,10 @@ Run the server using `fastmcp`:
 fastmcp run server.py
 ```
 
-Or run it directly with Python (if the main block calls `mcp.run()`):
+Or run it directly with `uv`:
 
 ```bash
-python server.py
+uv run server.py
 ```
 
 ### Available Tools
@@ -96,7 +96,7 @@ You can use `uv` directly to run the server:
 }
 ```
 
-*Note: Replace `/absolute/path/to/strava-mcp` with the full absolute path to your project directory. If Claude Desktop fails to start the server, you may need to provide the absolute path to the `uv` executable (e.g., `/Users/yourname/.cargo/bin/uv`). Run `which uv` in your terminal to find it.*
+*Note: Replace `/absolute/path/to/strava-mcp` with the full absolute path to your project directory. If Claude Desktop fails to start the server, you may need to provide the absolute path to the `uv` executable (e.g., `/Users/yourname/.cargo/bin/uv`). Run `which uv` (macOS/Linux) or `where uv` (Windows) in your terminal to find it.*
 
 ## Development
 
@@ -109,7 +109,7 @@ To run the test suite:
 uv sync --extra dev
 
 # Run tests
-pytest tests
+uv run pytest tests
 ```
 
--   Modify `server.py` to add more tools using the `stravalib` client.
+- Modify `server.py` to add more tools using the `stravalib` client.
