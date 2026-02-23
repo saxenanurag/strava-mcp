@@ -20,3 +20,6 @@ env/
 
 # Test Coverage
 .coverage
+
+# session md
+session*.md

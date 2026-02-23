@@ -49,6 +49,8 @@ class ActivitySummary:
     distance: float
     moving_time: int
     total_elevation_gain: float
+    average_speed: float = 0.0
+    max_speed: float = 0.0
 
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization."""

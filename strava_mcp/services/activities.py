@@ -28,6 +28,8 @@ def list_activities(client: Client, limit: int) -> list[ActivitySummary]:
             total_elevation_gain=float(activity.total_elevation_gain)
             if activity.total_elevation_gain
             else 0.0,
+            average_speed=float(activity.average_speed or 0.0),
+            max_speed=float(activity.max_speed or 0.0),
         )
         result.append(summary)
     return result
